@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, MapPin, ChevronRight, Shield } from 'lucide-react';
+import { User, Phone, Mail, MapPin, ChevronRight, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,7 +24,7 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState<'register' | 'otp'>('register');
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ name: '', surname: '', phone: '', tehsil: '' });
+  const [form, setForm] = useState({ name: '', surname: '', phone: '', email: '', tehsil: '' });
   const [otp, setOtp] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [shake, setShake] = useState(false);
@@ -39,17 +39,17 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreed) { toast.error('Please accept the User Agreement & Privacy Policy'); return; }
-    if (!form.name.trim() || !form.surname.trim() || !form.phone.trim() || !form.tehsil.trim()) {
+    if (!form.name.trim() || !form.surname.trim() || !form.phone.trim() || !form.email.trim() || !form.tehsil.trim()) {
       toast.error('All fields are required'); triggerShake(); return;
     }
     setLoading(true);
-    const { error } = await sendOtp(normalizePhone(form.phone));
+    const { error } = await sendOtp(normalizePhone(form.phone), form.email.trim());
     setLoading(false);
     if (error) {
       toast.error(error.message || 'Failed to send OTP');
       triggerShake();
     } else {
-      toast.success('OTP sent to your WhatsApp');
+      toast.success('OTP sent to your email');
       setStep('otp');
     }
   };
@@ -59,8 +59,7 @@ export default function RegisterPage() {
     if (otp.length < 4) { toast.error('Enter your OTP'); triggerShake(); return; }
     const phoneWithCode = normalizePhone(form.phone);
     setLoading(true);
-    // Use Edge Function verifyOtp (not raw supabase SMS OTP)
-    const { error } = await verifyOtp(phoneWithCode, otp);
+    const { error } = await verifyOtp(phoneWithCode, form.email.trim(), otp);
     if (error) {
       setLoading(false);
       toast.error(error.message || 'Invalid OTP');
@@ -83,7 +82,7 @@ export default function RegisterPage() {
   };
 
   const handleResend = async () => {
-    const { error } = await sendOtp(normalizePhone(form.phone));
+    const { error } = await sendOtp(normalizePhone(form.phone), form.email.trim());
     if (error) toast.error(error.message);
     else toast.success('OTP resent');
   };
@@ -150,6 +149,21 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-sm font-normal text-muted-foreground">Email (used to send your sign-in code)</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    className="pl-9 bg-input border-border"
+                    value={form.email}
+                    onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
                 <Label htmlFor="tehsil" className="text-sm font-normal text-muted-foreground">Tehsil</Label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10 pointer-events-none" />
@@ -204,9 +218,9 @@ export default function RegisterPage() {
             <div className="w-10 h-10 bg-primary/20 rounded flex items-center justify-center mb-2">
               <Shield className="w-5 h-5 text-primary" />
             </div>
-            <CardTitle className="text-xl text-balance">Verify Your Number</CardTitle>
+            <CardTitle className="text-xl text-balance">Verify Your Email</CardTitle>
             <CardDescription className="text-pretty">
-              Enter the OTP sent via WhatsApp to <span className="text-foreground font-medium">{form.phone}</span>
+              Enter the OTP sent to <span className="text-foreground font-medium">{form.email}</span>
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -24,8 +24,10 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
-  sendOtp: (phone: string) => Promise<SendOtpResult>;
-  verifyOtp: (phone: string, token: string) => Promise<VerifyOtpResult>;
+  // `email` is the temporary delivery address while WhatsApp OTP is pending approval.
+  // The phone number remains the user's real identity / profile field.
+  sendOtp: (phone: string, email: string) => Promise<SendOtpResult>;
+  verifyOtp: (phone: string, email: string, token: string) => Promise<VerifyOtpResult>;
   signInAdmin: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -65,42 +67,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Uses custom Edge Function which sends a real SMS via MSG91
-  const sendOtp = async (phone: string): Promise<SendOtpResult> => {
+  // ── TEMPORARY: email-delivered OTP via Supabase's own built-in mailer ──────
+  // While WhatsApp template approval is pending, we collect an email address
+  // purely as a delivery address (phone stays the real identity / profile
+  // field). This calls Supabase Auth directly — no custom Edge Function or
+  // outside email service needed. To switch back to WhatsApp later, swap
+  // these two functions back to calling the `auth-otp` Edge Function (see
+  // git history / WHATSAPP_SETUP.md) — nothing else in the app needs to change.
+  const sendOtp = async (phone: string, email: string): Promise<SendOtpResult> => {
     try {
-      const { error } = await supabase.functions.invoke('auth-otp', {
-        body: { action: 'send', phone },
-        method: 'POST',
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: true,
+          data: { phone }, // stashed in user_metadata so verifyOtp can save it to the profile
+        },
       });
-      if (error) {
-        const msg = await error?.context?.text?.() ?? error.message;
-        throw new Error(msg);
-      }
+      if (error) throw error;
       return { error: null };
     } catch (err) {
       return { error: err as Error };
     }
   };
 
-  // Verifies code via Edge Function, then signs in via magic link token
-  const verifyOtp = async (phone: string, token: string): Promise<VerifyOtpResult> => {
+  // Verifies the email OTP via Supabase Auth directly, then saves the phone
+  // number onto the resulting profile (profiles are auto-created by a DB
+  // trigger on signup — see 00001_initial_schema.sql).
+  const verifyOtp = async (phone: string, email: string, token: string): Promise<VerifyOtpResult> => {
     try {
-      const { data, error } = await supabase.functions.invoke('auth-otp', {
-        body: { action: 'verify', phone, code: token },
-        method: 'POST',
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'email',
       });
-      if (error) {
-        const msg = await error?.context?.text?.() ?? error.message;
-        throw new Error(msg);
-      }
-      if (!data?.hashed_token) throw new Error('No session token returned');
+      if (error) throw error;
+      if (!data.user) throw new Error('No user returned after verification');
 
-      // Sign in with the magic link token
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        token_hash: data.hashed_token,
-        type: 'magiclink',
-      });
-      if (verifyError) throw verifyError;
+      // Save phone number onto the profile (first sign-in only; safe to
+      // re-run on every login since it just re-sets the same value).
+      await supabase
+        .from('profiles')
+        .update({ phone, email })
+        .eq('id', data.user.id);
+
       return { error: null };
     } catch (err) {
       return { error: err as Error };

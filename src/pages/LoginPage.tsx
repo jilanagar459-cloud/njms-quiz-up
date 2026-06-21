@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, Shield } from 'lucide-react';
+import { Phone, Mail, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [shake, setShake] = useState(false);
@@ -24,16 +25,16 @@ export default function LoginPage() {
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone.trim()) { triggerShake(); return; }
+    if (!phone.trim() || !email.trim()) { triggerShake(); return; }
     const phoneWithCode = phone.startsWith('+') ? phone : '+' + phone.replace(/\D/g, '');
     setLoading(true);
-    const { error } = await sendOtp(phoneWithCode);
+    const { error } = await sendOtp(phoneWithCode, email.trim());
     setLoading(false);
     if (error) {
       toast.error(error.message || 'Failed to send OTP');
       triggerShake();
     } else {
-      toast.success('OTP sent to your WhatsApp');
+      toast.success('OTP sent to your email');
       setStep('otp');
     }
   };
@@ -43,7 +44,7 @@ export default function LoginPage() {
     if (otp.length < 4) { triggerShake(); return; }
     const phoneWithCode = phone.startsWith('+') ? phone : '+' + phone.replace(/\D/g, '');
     setLoading(true);
-    const { error } = await verifyOtp(phoneWithCode, otp);
+    const { error } = await verifyOtp(phoneWithCode, email.trim(), otp);
     setLoading(false);
     if (error) { toast.error(error.message || 'Invalid OTP'); triggerShake(); }
     else { toast.success('Welcome back!'); navigate('/quiz'); }
@@ -51,7 +52,7 @@ export default function LoginPage() {
 
   const handleResend = async () => {
     const phoneWithCode = phone.startsWith('+') ? phone : '+' + phone.replace(/\D/g, '');
-    const { error } = await sendOtp(phoneWithCode);
+    const { error } = await sendOtp(phoneWithCode, email.trim());
     if (error) toast.error(error.message);
     else toast.success('OTP resent');
   };
@@ -77,8 +78,8 @@ export default function LoginPage() {
           </CardTitle>
           <CardDescription className="text-pretty">
             {step === 'phone'
-              ? 'Enter your WhatsApp number to receive an OTP'
-              : `Code sent via WhatsApp to ${phone}`}
+              ? 'Enter your phone number and email to receive an OTP'
+              : `Code sent to ${email}`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -98,6 +99,22 @@ export default function LoginPage() {
                     value={phone}
                     onChange={e => setPhone(e.target.value)}
                     autoFocus
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-sm font-normal text-muted-foreground">
+                  Email (the one you registered with)
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    className="pl-9 bg-input border-border"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
                   />
                 </div>
               </div>
