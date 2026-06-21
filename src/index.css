@@ -1,0 +1,162 @@
+/* stylelint-disable */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 0.125rem;
+    /* Deep charcoal background */
+    --background: 0 0% 7%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 11%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 11%;
+    --popover-foreground: 0 0% 100%;
+    /* Electric Yellow primary */
+    --primary: 69 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 60%;
+    /* Low-saturation dark accent */
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 95%;
+    /* Alert Red destructive */
+    --destructive: 346 100% 59%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 20%;
+    --input: 0 0% 16%;
+    --ring: 69 100% 50%;
+    --chart-1: 69 100% 50%;
+    --chart-2: 346 100% 59%;
+    --chart-3: 199 89% 48%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 34 90% 55%;
+    --sidebar-background: 0 0% 9%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 69 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 69 100% 50%;
+    /* Status colors */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+  }
+
+  /* App is always dark themed */
+  .dark {
+    --background: 0 0% 7%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 11%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 11%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 69 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 95%;
+    --destructive: 346 100% 59%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 20%;
+    --input: 0 0% 16%;
+    --ring: 69 100% 50%;
+    --chart-1: 69 100% 50%;
+    --chart-2: 346 100% 59%;
+    --chart-3: 199 89% 48%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 34 90% 55%;
+    --sidebar-background: 0 0% 9%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 69 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 69 100% 50%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply dark;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* Monospaced numerics for timers and scores */
+  .mono-num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  }
+
+  /* Scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  *::-webkit-scrollbar { width: 6px; background: transparent; }
+  *::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
+}
+
+/* Timer progress bar - linear, no easing */
+.timer-bar {
+  transition: width 1s linear;
+}
+
+/* Answer shake animation */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+.shake { animation: shake 0.4s ease-in-out; }
+
+/* Question fade-in */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeIn 0.15s ease-out forwards; }
+
+/* Leaderboard rank change FLIP */
+@keyframes rankUp {
+  from { background-color: hsl(142 71% 45% / 0.2); }
+  to { background-color: transparent; }
+}
+.rank-up { animation: rankUp 1s ease-out forwards; }
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(135deg, hsl(69 100% 50%), hsl(38 92% 50%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
